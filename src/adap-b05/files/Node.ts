@@ -33,7 +33,9 @@ export class Node {
     }
 
     public getBaseName(): string {
-        return this.doGetBaseName();
+        const name = this.doGetBaseName();      // Class invariant: basename darf nicht leer sein
+        InvalidStateException.assert(name !== "", "basename must not be empty");
+        return name;
     }
 
     protected doGetBaseName(): string {
@@ -57,11 +59,11 @@ export class Node {
      * @param bn basename of node being searched for
      */
     public findNodes(bn: string): Set<Node> {
-        const result = new Set<Node>();
-        if (this.getBaseName() === bn) {        // prüfen ob dieser node matched
-            result.add(this);
+        const matches: Set<Node> = new Set<Node>();
+        if (this.getBaseName() === bn) {
+            matches.add(this);
         }
-        return result;
+        return matches;
     }
 
 }
