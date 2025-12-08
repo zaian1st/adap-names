@@ -1,6 +1,9 @@
 import { Node } from "./Node";
 import { Directory } from "./Directory";
 import { MethodFailedException } from "../common/MethodFailedException";
+import { ServiceFailureException } from "../common/ServiceFailureException";
+import { InvalidStateException } from "../common/InvalidStateException";
+import { IllegalArgumentException } from "../common/IllegalArgumentException";
 
 enum FileState {
     OPEN,
@@ -16,13 +19,16 @@ export class File extends Node {
         super(baseName, parent);
     }
 
-    public open(): void {
-        // do something
+    public open(): void {           // state muss CLOSED sein
+        InvalidStateException.assert(this.state === FileState.CLOSED, "file must be closed");
+        this.state = FileState.OPEN;
     }
 
     public read(noBytes: number): Int8Array {
+        IllegalArgumentException.assert(noBytes >= 0, "noBytes cannot be negative");
+        InvalidStateException.assert(this.state === FileState.OPEN, "file must be open");
+        
         let result: Int8Array = new Int8Array(noBytes);
-        // do something
 
         let tries: number = 0;
         for (let i: number = 0; i < noBytes; i++) {
@@ -30,8 +36,8 @@ export class File extends Node {
                 result[i] = this.readNextByte();
             } catch(ex) {
                 tries++;
-                if (ex instanceof MethodFailedException) {
-                    // Oh no! What @todo?!
+                if (ex instanceof MethodFailedException) {      // escalate zu service failure
+                    throw new ServiceFailureException("read failed after " + tries + " tries", ex);
                 }
             }
         }
@@ -44,7 +50,8 @@ export class File extends Node {
     }
 
     public close(): void {
-        // do something
+        InvalidStateException.assert(this.state === FileState.OPEN, "file must be open");
+        this.state = FileState.CLOSED;
     }
 
     protected doGetFileState(): FileState {
